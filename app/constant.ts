@@ -74,11 +74,16 @@ export enum ModelProvider {
   GeminiPro = "GeminiPro",
 }
 
+export enum ImageProvider {
+  Dalle3 = "dall-e-3",
+}
+
 export const OpenaiPath = {
   ChatPath: "v1/chat/completions",
   UsagePath: "dashboard/billing/usage",
   SubsPath: "dashboard/billing/subscription",
   ListModelPath: "v1/models",
+  ImagePath: "v1/images/generations",
 };
 
 export const Azure = {
@@ -269,6 +274,15 @@ export const DEFAULT_MODELS = [
       id: "openai",
       providerName: "OpenAI",
       providerType: "openai",
+    },
+  },
+  {
+    name: "dall-e-3",
+    available: true,
+    provider: {
+      id: "openAI",
+      providerName: "OpenAI",
+      providerType: "openAI",
     },
   },
   {

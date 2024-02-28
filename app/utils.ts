@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { showToast } from "./components/ui-lib";
 import Locale from "./locales";
 import { RequestMessage } from "./client/api";
-import { DEFAULT_MODELS } from "./constant";
+import { DEFAULT_MODELS, ImageProvider } from "./constant";
 
 export function trimTopic(topic: string) {
   // Fix an issue where double quotes still show in the Indonesian language
@@ -297,3 +297,13 @@ export function isVisionModel(model: string) {
     !DEFAULT_MODELS.find((m) => m.name == model)
   );
 }
+
+export const CheckImagesModelExists = (model: string) => {
+  let flag = false;
+  Object.values(ImageProvider).forEach((value: any) => {
+    if (value === model) {
+      flag = true;
+    }
+  });
+  return flag;
+};

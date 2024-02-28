@@ -29,6 +29,7 @@ import {
   getMessageTextContent,
   getMessageImages,
   isVisionModel,
+  CheckImagesModelExists,
 } from "@/app/utils";
 
 export interface OpenAIListModelResponse {
@@ -110,6 +111,13 @@ export class ChatGPTApi implements LLMApi {
       // Please do not ask me why not send max_tokens, no reason, this param is just shit, I dont want to explain anymore.
     };
 
+    const requestImagePayload = {
+      model: modelConfig.model,
+      prompt: options.messages[options.messages.length - 1].content,
+      n: 1,
+      size: "1024x1024",
+    };
+
     // add max_tokens to vision model
     if (visionModel) {
       Object.defineProperty(requestPayload, "max_tokens", {
@@ -120,17 +128,31 @@ export class ChatGPTApi implements LLMApi {
       });
     }
 
-    console.log("[Request] openai payload: ", requestPayload);
+    console.log(
+      "[Request] openai payload: ",
+      requestPayload,
+      requestImagePayload,
+    );
 
     const shouldStream = !!options.config.stream;
     const controller = new AbortController();
     options.onController?.(controller);
 
     try {
-      const chatPath = this.path(OpenaiPath.ChatPath);
+      let chatPath: string;
+      let requestBody: any;
+      const flag = CheckImagesModelExists(modelConfig.model);
+      if (flag) {
+        chatPath = this.path(OpenaiPath.ImagePath);
+        requestBody = requestImagePayload;
+      } else {
+        chatPath = this.path(OpenaiPath.ChatPath);
+        requestBody = requestPayload;
+      }
       const chatPayload = {
         method: "POST",
-        body: JSON.stringify(requestPayload),
+        // body: JSON.stringify(requestPayload),
+        body: JSON.stringify(requestBody),
         signal: controller.signal,
         headers: getHeaders(),
       };
@@ -140,8 +162,26 @@ export class ChatGPTApi implements LLMApi {
         () => controller.abort(),
         REQUEST_TIMEOUT_MS,
       );
+      //dall-e-3
+      if (flag && shouldStream) {
+        const res = await fetch(chatPath, chatPayload);
+        clearTimeout(requestTimeoutId);
 
-      if (shouldStream) {
+        const resJson = await res.json();
+        let msg: any;
+        if (resJson["data"]) {
+          let url = resJson["data"][0]["url"];
+          let promptMsg = resJson["data"][0]["revised_prompt"];
+          msg = `![alt](${url} "images")\n` + promptMsg;
+        }
+        if (resJson["error"]) {
+          msg = prettyObject({
+            error: resJson["error"]["code"],
+            message: resJson["error"]["message"],
+          });
+        }
+        options.onFinish(msg);
+      } else if (shouldStream) {
         let responseText = "";
         let remainText = "";
         let finished = false;
