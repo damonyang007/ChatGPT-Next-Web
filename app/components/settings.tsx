@@ -699,8 +699,8 @@ export function Settings() {
               </div>
             </Popover>
           </ListItem>
-
-          <ListItem
+          {/* 隐藏当前版本 检查更新 */}
+          {/* <ListItem
             title={Locale.Settings.Update.Version(currentVersion ?? "unknown")}
             subTitle={
               checkingUpdate
@@ -723,7 +723,7 @@ export function Settings() {
                 onClick={() => checkUpdate(true)}
               />
             )}
-          </ListItem>
+          </ListItem> */}
 
           <ListItem title={Locale.Settings.SendKey}>
             <Select
@@ -809,8 +809,8 @@ export function Settings() {
               }
             ></input>
           </ListItem>
-
-          <ListItem
+          {/* 隐藏预览气泡：在预览气泡总预览Markdown 内容 */}
+          {/* <ListItem
             title={Locale.Settings.SendPreviewBubble.Title}
             subTitle={Locale.Settings.SendPreviewBubble.SubTitle}
           >
@@ -824,7 +824,7 @@ export function Settings() {
                 )
               }
             ></input>
-          </ListItem>
+          </ListItem> */}
         </List>
 
         <SyncItems />
@@ -846,8 +846,8 @@ export function Settings() {
               }
             ></input>
           </ListItem>
-
-          <ListItem
+          {/* 隐藏内置功能角色按钮 */}
+          {/* <ListItem
             title={Locale.Settings.Mask.Builtin.Title}
             subTitle={Locale.Settings.Mask.Builtin.SubTitle}
           >
@@ -861,7 +861,7 @@ export function Settings() {
                 )
               }
             ></input>
-          </ListItem>
+          </ListItem> */}
         </List>
 
         <List>
@@ -1149,8 +1149,8 @@ export function Settings() {
               )}
             </ListItem>
           ) : null}
-
-          <ListItem
+          {/* 隐藏自定义模型名 */}
+          {/* <ListItem
             title={Locale.Settings.Access.CustomModel.Title}
             subTitle={Locale.Settings.Access.CustomModel.SubTitle}
           >
@@ -1164,7 +1164,7 @@ export function Settings() {
                 )
               }
             ></input>
-          </ListItem>
+          </ListItem> */}
         </List>
 
         <List>

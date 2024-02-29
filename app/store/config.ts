@@ -29,7 +29,7 @@ export const DEFAULT_CONFIG = {
   lastUpdate: Date.now(), // timestamp, to merge state
 
   submitKey: SubmitKey.Enter,
-  avatar: "1f603",
+  avatar: "1f64b",
   fontSize: 14,
   theme: Theme.Auto as Theme,
   tightBorder: !!getClientConfig()?.isApp,
@@ -47,9 +47,9 @@ export const DEFAULT_CONFIG = {
 
   modelConfig: {
     model: "gpt-3.5-turbo-16k" as ModelType,
-    temperature: 0.5,
+    temperature: 0.7,
     top_p: 1,
-    max_tokens: 4000,
+    max_tokens: 8000,
     presence_penalty: 0,
     frequency_penalty: 0,
     sendMemory: true,
@@ -61,6 +61,12 @@ export const DEFAULT_CONFIG = {
 };
 
 export type ChatConfig = typeof DEFAULT_CONFIG;
+
+export type ChatConfigStore = ChatConfig & {
+  reset: () => void;
+  update: (updater: (config: ChatConfig) => void) => void;
+  setTheme: (theme: Theme) => void;
+};
 
 export type ModelConfig = ChatConfig["modelConfig"];
 
@@ -129,6 +135,10 @@ export const useAppConfig = createPersistStore(
     },
 
     allModels() {},
+
+    setTheme(theme: any) {
+      set((state) => ({ ...state, theme }));
+    },
   }),
   {
     name: StoreKey.Config,

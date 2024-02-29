@@ -13,6 +13,7 @@ export function ModelConfigList(props: {
 
   return (
     <>
+      {/* 模型设置 */}
       <ListItem title={Locale.Settings.Model}>
         <Select
           value={props.modelConfig.model}
@@ -135,8 +136,8 @@ export function ModelConfigList(props: {
               }}
             ></InputRange>
           </ListItem>
-
-          <ListItem
+          {/* 隐藏注入系统级提示信息：强制给每次请求的消息列表添加一个模拟ChatGPT 的系统提示 */}
+          {/* <ListItem
             title={Locale.Settings.InjectSystemPrompts.Title}
             subTitle={Locale.Settings.InjectSystemPrompts.SubTitle}
           >
@@ -151,7 +152,7 @@ export function ModelConfigList(props: {
                 )
               }
             ></input>
-          </ListItem>
+          </ListItem> */}
 
           <ListItem
             title={Locale.Settings.InputTemplate.Title}

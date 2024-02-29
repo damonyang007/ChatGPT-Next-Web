@@ -175,8 +175,8 @@ export function MaskConfig(props: {
             />
           </ListItem>
         ) : null}
-
-        {props.shouldSyncFromGlobal ? (
+        {/* 隐藏使用全局设置 */}
+        {/* {props.shouldSyncFromGlobal ? (
           <ListItem
             title={Locale.Mask.Config.Sync.Title}
             subTitle={Locale.Mask.Config.Sync.SubTitle}
@@ -202,7 +202,7 @@ export function MaskConfig(props: {
               }}
             ></input>
           </ListItem>
-        ) : null}
+        ) : null} */}
       </List>
 
       <List>
@@ -215,7 +215,7 @@ export function MaskConfig(props: {
     </>
   );
 }
-
+// 预设对话
 function ContextPromptItem(props: {
   index: number;
   prompt: ChatMessage;
@@ -223,6 +223,11 @@ function ContextPromptItem(props: {
   remove: () => void;
 }) {
   const [focusingInput, setFocusingInput] = useState(false);
+
+  // 如果 role 为 'system'，则不渲染
+  if (props.prompt.role === "system") {
+    return null;
+  }
 
   return (
     <div className={chatStyle["context-prompt-row"]}>
@@ -468,7 +473,6 @@ export function MaskPage() {
               {Locale.Mask.Page.SubTitle(allMasks.length)}
             </div>
           </div>
-
           <div className="window-actions">
             <div className="window-action-button">
               <IconButton
@@ -526,8 +530,8 @@ export function MaskPage() {
                 </option>
               ))}
             </Select>
-
-            <IconButton
+            {/* 隐藏预设功能角色页面的新建按钮 */}
+            {/* <IconButton
               className={styles["mask-create"]}
               icon={<AddIcon />}
               text={Locale.Mask.Page.Create}
@@ -536,7 +540,7 @@ export function MaskPage() {
                 const createdMask = maskStore.create();
                 setEditingMaskId(createdMask.id);
               }}
-            />
+            /> */}
           </div>
 
           <div>
@@ -601,18 +605,19 @@ export function MaskPage() {
             title={Locale.Mask.EditModal.Title(editingMask?.builtin)}
             onClose={closeMaskModal}
             actions={[
-              <IconButton
-                icon={<DownloadIcon />}
-                text={Locale.Mask.EditModal.Download}
-                key="export"
-                bordered
-                onClick={() =>
-                  downloadAs(
-                    JSON.stringify(editingMask),
-                    `${editingMask.name}.json`,
-                  )
-                }
-              />,
+              // 隐藏下载预设按钮
+              // <IconButton
+              //   icon={<DownloadIcon />}
+              //   text={Locale.Mask.EditModal.Download}
+              //   key="export"
+              //   bordered
+              //   onClick={() =>
+              //     downloadAs(
+              //       JSON.stringify(editingMask),
+              //       `${editingMask.name}.json`,
+              //     )
+              //   }
+              // />,
               <IconButton
                 key="copy"
                 icon={<CopyIcon />}

@@ -525,14 +525,14 @@ export function ChatActions(props: {
         text={Locale.Chat.InputActions.Prompt}
         icon={<PromptIcon />}
       />
-
-      <ChatAction
+      {/* 隐藏聊天框上的所有功能角色按钮 */}
+      {/* <ChatAction
         onClick={() => {
           navigate(Path.Masks);
         }}
         text={Locale.Chat.InputActions.Masks}
         icon={<MaskIcon />}
-      />
+      /> */}
 
       <ChatAction
         text={Locale.Chat.InputActions.Clear}
@@ -925,7 +925,12 @@ function _Chat() {
   };
 
   const context: RenderMessage[] = useMemo(() => {
-    return session.mask.hideContext ? [] : session.mask.context.slice();
+    // return session.mask.hideContext ? [] : session.mask.context.slice();
+    return session.mask.hideContext
+      ? []
+      : session.mask.context.filter((m) => {
+          return m.role === "assistant" || m.role === "user";
+        });
   }, [session.mask.context, session.mask.hideContext]);
   const accessStore = useAccessStore();
 
@@ -1196,7 +1201,7 @@ function _Chat() {
           {showMaxIcon && (
             <div className="window-action-button">
               <IconButton
-                icon={config.tightBorder ? <MinIcon /> : <MaxIcon />}
+                icon={config.tightBorder ? <MaxIcon /> : <MinIcon />}
                 bordered
                 onClick={() => {
                   config.update(

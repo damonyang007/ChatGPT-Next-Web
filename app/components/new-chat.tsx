@@ -7,6 +7,7 @@ import styles from "./new-chat.module.scss";
 import LeftIcon from "../icons/left.svg";
 import LightningIcon from "../icons/lightning.svg";
 import EyeIcon from "../icons/eye.svg";
+import HuameiHiWin from "../icons/HuameiHiWin.svg";
 
 import { useLocation, useNavigate } from "react-router-dom";
 import { Mask, useMaskStore } from "../store/mask";
@@ -116,7 +117,7 @@ export function NewChat() {
         <IconButton
           icon={<LeftIcon />}
           text={Locale.NewChat.Return}
-          onClick={() => navigate(Path.Home)}
+          onClick={() => navigate(Path.Chat)}
         ></IconButton>
         {!state?.fromHome && (
           <IconButton
@@ -132,7 +133,8 @@ export function NewChat() {
           ></IconButton>
         )}
       </div>
-      <div className={styles["mask-cards"]}>
+      {/* 隐藏功能角色卡片 */}
+      {/* <div className={styles["mask-cards"]}>
         <div className={styles["mask-card"]}>
           <EmojiAvatar avatar="1f606" size={24} />
         </div>
@@ -142,8 +144,10 @@ export function NewChat() {
         <div className={styles["mask-card"]}>
           <EmojiAvatar avatar="1f479" size={24} />
         </div>
+      </div> */}
+      <div className={styles["sidebar-logo"] + " no-dark"}>
+        <HuameiHiWin />
       </div>
-
       <div className={styles["title"]}>{Locale.NewChat.Title}</div>
       <div className={styles["sub-title"]}>{Locale.NewChat.SubTitle}</div>
 

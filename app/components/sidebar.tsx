@@ -1,8 +1,11 @@
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useRef, useMemo, useState } from "react";
 
 import styles from "./home.module.scss";
 
+import Image from "next/image";
 import { IconButton } from "./button";
+import Huamei_Light from "../icons/Huamei_Light.png";
+import Huamei_Dark from "../icons/Huamei_Dark.png";
 import SettingsIcon from "../icons/settings.svg";
 import GithubIcon from "../icons/github.svg";
 import ChatGptIcon from "../icons/chatgpt.svg";
@@ -141,6 +144,26 @@ export function SideBar(props: { className?: string }) {
     [isMobileScreen],
   );
 
+  const { theme, setTheme } = config;
+  const [logoSrc, setLogoSrc] = useState(Huamei_Light);
+  useEffect(() => {
+    const browserTheme = window.matchMedia("(prefers-color-scheme: dark)")
+      .matches
+      ? "dark"
+      : "light";
+    if (theme === "auto") {
+      setLogoSrc(browserTheme === "dark" ? Huamei_Dark : Huamei_Light);
+    } else if (theme === "light") {
+      setLogoSrc(Huamei_Light);
+    } else {
+      setLogoSrc(Huamei_Dark);
+    }
+  }, [theme]);
+
+  const handleThemeChange = (newTheme: string) => {
+    setTheme(config.theme);
+  };
+
   useHotKey();
 
   return (
@@ -155,13 +178,13 @@ export function SideBar(props: { className?: string }) {
     >
       <div className={styles["sidebar-header"]} data-tauri-drag-region>
         <div className={styles["sidebar-title"]} data-tauri-drag-region>
-          NextChat
+          H&H AI智能助手
         </div>
         <div className={styles["sidebar-sub-title"]}>
-          Build your own AI assistant.
+          AI智能助手，工作得心应手
         </div>
         <div className={styles["sidebar-logo"] + " no-dark"}>
-          <ChatGptIcon />
+          <Image src={logoSrc} alt="Huamei" />
         </div>
       </div>
 
@@ -179,13 +202,14 @@ export function SideBar(props: { className?: string }) {
           }}
           shadow
         />
-        <IconButton
+        {/* 隐藏siderbar的插件按钮 */}
+        {/* <IconButton
           icon={<PluginIcon />}
           text={shouldNarrow ? undefined : Locale.Plugin.Name}
           className={styles["sidebar-bar-button"]}
           onClick={() => showToast(Locale.WIP)}
           shadow
-        />
+        /> */}
       </div>
 
       <div
@@ -216,18 +240,19 @@ export function SideBar(props: { className?: string }) {
               <IconButton icon={<SettingsIcon />} shadow />
             </Link>
           </div>
-          <div className={styles["sidebar-action"]}>
+          {/* 隐藏Github按钮 */}
+          {/* <div className={styles["sidebar-action"]}>
             <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
               <IconButton icon={<GithubIcon />} shadow />
             </a>
-          </div>
+          </div> */}
         </div>
         <div>
           <IconButton
             icon={<AddIcon />}
             text={shouldNarrow ? undefined : Locale.Home.NewChat}
             onClick={() => {
-              if (config.dontShowMaskSplashScreen) {
+              if (!config.dontShowMaskSplashScreen) {
                 chatStore.newSession();
                 navigate(Path.Chat);
               } else {
