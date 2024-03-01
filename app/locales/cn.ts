@@ -430,6 +430,14 @@ const cn = {
         SubTitle: "生成此功能角色的直达链接",
         Action: "复制链接",
       },
+      API: {
+        Title: "API 根地址",
+        SubTitle: "通过API接入到已有系统中，或企微、飞书等",
+      },
+      KEY: {
+        Title: "API KEY",
+        SubTitle: "填入已经生成的API密钥",
+      },
     },
   },
   NewChat: {

@@ -5,7 +5,7 @@ import { EN_MASKS } from "./en";
 import { type BuiltinMask } from "./typing";
 export { type BuiltinMask } from "./typing";
 
-export const BUILTIN_MASK_ID = 100000;
+export const BUILTIN_MASK_ID = 1;
 
 export const BUILTIN_MASK_STORE = {
   buildinId: BUILTIN_MASK_ID,
