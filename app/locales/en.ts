@@ -436,6 +436,15 @@ const en: LocaleType = {
         SubTitle: "Generate a link to this mask",
         Action: "Copy Link",
       },
+      API: {
+        Title: "API root address",
+        SubTitle:
+          "Integrate into existing systems through API, or with WeCom and Feishu.",
+      },
+      KEY: {
+        Title: "API KEY",
+        SubTitle: "Enter the generated API key.",
+      },
     },
   },
   NewChat: {
