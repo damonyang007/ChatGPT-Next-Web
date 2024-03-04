@@ -7,7 +7,7 @@ export const CN_MASKS: BuiltinMask[] = [
     context: [
       {
         id: "writer-0",
-        role: "system",
+        role: "assistant",
         content: "我是一个画图机器人，请对你需要的图片内容进行描述",
         date: "",
       },
