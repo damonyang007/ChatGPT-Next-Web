@@ -13,6 +13,8 @@ export const OPENAI_BASE_URL = "https://api.openai.com";
 
 export const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/";
 
+export const MASK_BASE_URL = "https://api.azurewebsites.net/api";
+
 export enum Path {
   Home = "/",
   Chat = "/chat",
@@ -108,7 +110,7 @@ Latex inline: $x^2$
 Latex block: $$e=mc^2$$
 `;
 
-export const SUMMARIZE_MODEL = "gpt-3.5-turbo";
+export const SUMMARIZE_MODEL = "gpt-3.5-turbo-16k";
 export const GEMINI_SUMMARIZE_MODEL = "gemini-pro";
 
 export const KnowledgeCutOffDate: Record<string, string> = {
