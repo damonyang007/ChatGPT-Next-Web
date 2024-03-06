@@ -28,6 +28,7 @@ import {
   List,
   ListItem,
   Modal,
+  PasswordInput,
   Popover,
   Select,
   showConfirm,
@@ -225,7 +226,7 @@ export function MaskConfig(props: {
           title={Locale.Mask.Config.KEY.Title}
           subTitle={Locale.Mask.Config.KEY.SubTitle}
         >
-          <input
+          <PasswordInput
             type="text"
             placeholder={Locale.Mask.Config.KEY.Placeholder}
             value={props.mask.key}
