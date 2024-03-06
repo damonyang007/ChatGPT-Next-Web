@@ -474,7 +474,8 @@ export function MaskPage() {
             </div>
           </div>
           <div className="window-actions">
-            <div className="window-action-button">
+            {/* 隐藏导入导出按钮 */}
+            {/* <div className="window-action-button">
               <IconButton
                 icon={<DownloadIcon />}
                 bordered
@@ -489,7 +490,7 @@ export function MaskPage() {
                 bordered
                 onClick={() => importFromFile()}
               />
-            </div>
+            </div> */}
             <div className="window-action-button">
               <IconButton
                 icon={<CloseIcon />}
@@ -531,7 +532,7 @@ export function MaskPage() {
               ))}
             </Select>
             {/* 隐藏预设功能角色页面的新建按钮 */}
-            {/* <IconButton
+            <IconButton
               className={styles["mask-create"]}
               icon={<AddIcon />}
               text={Locale.Mask.Page.Create}
@@ -540,7 +541,7 @@ export function MaskPage() {
                 const createdMask = maskStore.create();
                 setEditingMaskId(createdMask.id);
               }}
-            /> */}
+            />
           </div>
 
           <div>
