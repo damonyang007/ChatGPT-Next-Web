@@ -55,6 +55,8 @@ export const CN_MASKS: BuiltinMask[] = [
     lang: "cn",
     builtin: true,
     createdAt: 1688899480511,
+    url: "https://hhkcfindit.azurewebsites.net/api",
+    key: "fastgpt-ogl6WdtPVV1yR0sTB1yZWn74mYJm",
   },
   {
     avatar: "1f4e7",

@@ -153,11 +153,12 @@ export function getHeaders() {
     "Content-Type": "application/json",
     Accept: "application/json",
   };
-  const modelConfig = useChatStore.getState().currentSession().mask.modelConfig;
+  const currentSession = useChatStore.getState().currentSession();
+  const modelConfig = currentSession.mask.modelConfig;
   const isGoogle = modelConfig.model.startsWith("gemini");
   const isAzure = accessStore.provider === ServiceProvider.Azure;
   const authHeader = isAzure ? "api-key" : "Authorization";
-  const apiKey = isGoogle
+  let apiKey = isGoogle
     ? accessStore.googleApiKey
     : isAzure
     ? accessStore.azureApiKey
@@ -165,6 +166,12 @@ export function getHeaders() {
   const clientConfig = getClientConfig();
   const makeBearer = (s: string) => `${isAzure ? "" : "Bearer "}${s.trim()}`;
   const validString = (x: string) => x && x.length > 0;
+
+  // Check if the current session and mask exist and has a custom key
+  if (currentSession && currentSession.mask && currentSession.mask.key) {
+    // Use the custom key from the mask
+    apiKey = currentSession.mask.key;
+  }
 
   // when using google api in app, not set auth header
   if (!(isGoogle && clientConfig?.isApp)) {

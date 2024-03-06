@@ -444,6 +444,7 @@ const en: LocaleType = {
       KEY: {
         Title: "API KEY",
         SubTitle: "Enter the generated API key.",
+        Placeholder: "fastgpt-xxxxxxxx",
       },
     },
   },

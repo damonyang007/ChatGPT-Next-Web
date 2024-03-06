@@ -43,12 +43,24 @@ const DEFAULT_ACCESS_STATE = {
   disableGPT4: false,
   disableFastLink: false,
   customModels: "",
+
+  //mask config
+  url: "",
+  key: "",
 };
 
 export const useAccessStore = createPersistStore(
   { ...DEFAULT_ACCESS_STATE },
 
   (set, get) => ({
+    getUrl(baseUrl: string) {
+      return get().url;
+    },
+
+    setUrl(url: string) {
+      set({ url });
+    },
+
     enabledAccessControl() {
       this.fetch();
 

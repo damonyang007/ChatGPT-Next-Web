@@ -46,7 +46,7 @@ import {
 } from "../utils";
 import { Updater } from "../typing";
 import { ModelConfigList } from "./model-config";
-import { FileName, Path } from "../constant";
+import { FileName, MASK_BASE_URL, Path } from "../constant";
 import { BUILTIN_MASK_STORE } from "../masks";
 import { nanoid } from "nanoid";
 import {
@@ -176,7 +176,7 @@ export function MaskConfig(props: {
           </ListItem>
         ) : null}
         {/* 隐藏使用全局设置 */}
-        {/* {props.shouldSyncFromGlobal ? (
+        {props.shouldSyncFromGlobal ? (
           <ListItem
             title={Locale.Mask.Config.Sync.Title}
             subTitle={Locale.Mask.Config.Sync.SubTitle}
@@ -202,9 +202,42 @@ export function MaskConfig(props: {
               }}
             ></input>
           </ListItem>
-        ) : null} */}
+        ) : null}
       </List>
-
+      {/* 外部接入API */}
+      <List>
+        <ListItem
+          title={Locale.Mask.Config.API.Title}
+          subTitle={Locale.Mask.Config.API.SubTitle}
+        >
+          <input
+            type="text"
+            placeholder={MASK_BASE_URL}
+            value={props.mask.url}
+            onChange={async (e) => {
+              return props.updateMask((mask) => {
+                mask.url = e.currentTarget.value;
+              });
+            }}
+          />
+        </ListItem>
+        <ListItem
+          title={Locale.Mask.Config.KEY.Title}
+          subTitle={Locale.Mask.Config.KEY.SubTitle}
+        >
+          <input
+            type="text"
+            placeholder={Locale.Mask.Config.KEY.Placeholder}
+            value={props.mask.key}
+            onChange={async (e) => {
+              return props.updateMask((mask) => {
+                mask.key = e.currentTarget.value;
+              });
+            }}
+          />
+        </ListItem>
+      </List>
+      {/* 模型(model) */}
       <List>
         <ModelConfigList
           modelConfig={{ ...props.mask.modelConfig }}
@@ -531,7 +564,7 @@ export function MaskPage() {
                 </option>
               ))}
             </Select>
-            {/* 隐藏预设功能角色页面的新建按钮 */}
+
             <IconButton
               className={styles["mask-create"]}
               icon={<AddIcon />}

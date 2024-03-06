@@ -437,6 +437,7 @@ const cn = {
       KEY: {
         Title: "API KEY",
         SubTitle: "填入已经生成的API密钥",
+        Placeholder: "fastgpt-xxxxxxxx",
       },
     },
   },

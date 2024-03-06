@@ -46,7 +46,7 @@ export class ChatGPTApi implements LLMApi {
 
   path(path: string): string {
     const accessStore = useAccessStore.getState();
-
+    const currentSession = useChatStore.getState().currentSession();
     const isAzure = accessStore.provider === ServiceProvider.Azure;
 
     if (isAzure && !accessStore.isValidAzure()) {
@@ -56,6 +56,13 @@ export class ChatGPTApi implements LLMApi {
     }
 
     let baseUrl = isAzure ? accessStore.azureUrl : accessStore.openaiUrl;
+
+    // Check if the current session and mask exist and has a custom URL
+    if (currentSession && currentSession.mask && currentSession.mask.url) {
+      baseUrl = currentSession.mask.url;
+      // Update the accessStore with the custom URL
+      accessStore.getUrl(baseUrl);
+    }
 
     if (baseUrl.length === 0) {
       const isApp = !!getClientConfig()?.isApp;
