@@ -340,6 +340,10 @@ const en: LocaleType = {
     },
 
     Model: "Model",
+    Image: {
+      Title: "Image Size (size)",
+      SubTitle: "Offering a variety of sizes to choose from.",
+    },
     Temperature: {
       Title: "Temperature",
       SubTitle: "A larger value makes the more random output",
