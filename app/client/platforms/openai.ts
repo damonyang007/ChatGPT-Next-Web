@@ -122,7 +122,7 @@ export class ChatGPTApi implements LLMApi {
       model: modelConfig.model,
       prompt: options.messages[options.messages.length - 1].content,
       n: 1,
-      size: "1024x1024",
+      size: modelConfig.imageSize,
     };
 
     // add max_tokens to vision model

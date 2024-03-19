@@ -337,6 +337,10 @@ const cn = {
     },
 
     Model: "模型 (model)",
+    Image: {
+      Title: "图像大小 (size)",
+      SubTitle: "提供几种尺寸，可供选择",
+    },
     Temperature: {
       Title: "随机性 (temperature)",
       SubTitle: "值越大，回复越随机",

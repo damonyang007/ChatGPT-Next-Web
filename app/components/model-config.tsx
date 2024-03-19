@@ -35,6 +35,32 @@ export function ModelConfigList(props: {
             ))}
         </Select>
       </ListItem>
+      {props.modelConfig.model === "dall-e-3" && (
+        <ListItem
+          title={Locale.Settings.Image.Title}
+          subTitle={Locale.Settings.Image.SubTitle}
+        >
+          <Select
+            value={props.modelConfig.imageSize}
+            onChange={(e) => {
+              props.updateConfig(
+                (config) => (config.imageSize = e.currentTarget.value),
+              );
+            }}
+          >
+            <option value={props.modelConfig.imageSize}>
+              {props.modelConfig.imageSize}
+            </option>
+            {["1792x1024", "1024x1792", "1024x1024"]
+              .filter((size) => size !== props.modelConfig.imageSize)
+              .map((size) => (
+                <option value={size} key={size}>
+                  {size}
+                </option>
+              ))}
+          </Select>
+        </ListItem>
+      )}
       <ListItem
         title={Locale.Settings.Temperature.Title}
         subTitle={Locale.Settings.Temperature.SubTitle}
