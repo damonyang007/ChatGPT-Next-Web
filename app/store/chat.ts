@@ -21,9 +21,15 @@ import { estimateTokenLength } from "../utils/token";
 import { nanoid } from "nanoid";
 import { createPersistStore } from "../utils/store";
 
+export interface ChatToolMessage {
+  toolName: string;
+  toolInput?: string;
+}
+
 export type ChatMessage = RequestMessage & {
   date: string;
   streaming?: boolean;
+  toolMessages?: ChatToolMessage[];
   isError?: boolean;
   id: string;
   model?: ModelType;

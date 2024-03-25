@@ -1,5 +1,13 @@
 import { Google, REQUEST_TIMEOUT_MS } from "@/app/constant";
-import { ChatOptions, getHeaders, LLMApi, LLMModel, LLMUsage } from "../api";
+import {
+  AgentChatOptions,
+  ChatOptions,
+  getHeaders,
+  LLMApi,
+  LLMModel,
+  LLMUsage,
+  SpeechOptions,
+} from "../api";
 import { useAccessStore, useAppConfig, useChatStore } from "@/app/store";
 import { getClientConfig } from "@/app/config/client";
 import { DEFAULT_API_HOST } from "@/app/constant";
@@ -10,6 +18,12 @@ import {
 } from "@/app/utils";
 
 export class GeminiProApi implements LLMApi {
+  speech(options: SpeechOptions): Promise<ArrayBuffer> {
+    throw new Error("Method not implemented.");
+  }
+  toolAgentChat(options: AgentChatOptions): Promise<void> {
+    throw new Error("Method not implemented.");
+  }
   extractMessage(res: any) {
     console.log("[Response] gemini-pro response: ", res);
 
@@ -115,8 +129,6 @@ export class GeminiProApi implements LLMApi {
         ? Google.VisionChatPath
         : Google.ChatPath;
       let chatPath = this.path(googleChatPath);
-
-      // let baseUrl = accessStore.googleUrl;
 
       if (!baseUrl) {
         baseUrl = isApp
@@ -237,11 +249,14 @@ export class GeminiProApi implements LLMApi {
           })
           .catch((error) => {
             console.error("Error:", error);
+            options.onError?.(error as Error);
           });
       } else {
         const res = await fetch(baseUrl, chatPayload);
         clearTimeout(requestTimeoutId);
+
         const resJson = await res.json();
+
         if (resJson?.promptFeedback?.blockReason) {
           // being blocked
           options.onError?.(

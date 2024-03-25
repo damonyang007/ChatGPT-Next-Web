@@ -19,6 +19,7 @@ export type Mask = {
   builtin: boolean;
   url?: string;
   key?: string;
+  usePlugins?: boolean;
 };
 
 export const DEFAULT_MASK_STATE = {

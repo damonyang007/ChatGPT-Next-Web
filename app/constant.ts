@@ -21,6 +21,7 @@ export enum Path {
   Settings = "/settings",
   NewChat = "/new-chat",
   Masks = "/masks",
+  Plugins = "/plugins",
   Auth = "/auth",
 }
 
@@ -36,6 +37,7 @@ export enum SlotID {
 
 export enum FileName {
   Masks = "masks.json",
+  Plugins = "plugins.json",
   Prompts = "prompts.json",
 }
 
@@ -44,6 +46,7 @@ export enum StoreKey {
   Access = "access-control",
   Config = "app-config",
   Mask = "mask-store",
+  Plugin = "plugin-store",
   Prompt = "prompt-store",
   Update = "chat-update",
   Sync = "sync",
@@ -82,6 +85,7 @@ export enum ImageProvider {
 
 export const OpenaiPath = {
   ChatPath: "v1/chat/completions",
+  SpeechPath: "v1/audio/speech",
   UsagePath: "dashboard/billing/usage",
   SubsPath: "dashboard/billing/subscription",
   ListModelPath: "v1/models",
@@ -123,6 +127,18 @@ export const KnowledgeCutOffDate: Record<string, string> = {
   // it's now easier to add "KnowledgeCutOffDate" instead of stupid hardcoding it, as was done previously.
   "gemini-pro": "2023-12",
 };
+
+export const DEFAULT_TTS_MODEL = "tts-1";
+export const DEFAULT_TTS_VOICE = "alloy";
+export const DEFAULT_TTS_MODELS = ["tts-1", "tts-1-hd"];
+export const DEFAULT_TTS_VOICES = [
+  "alloy",
+  "echo",
+  "fable",
+  "onyx",
+  "nova",
+  "shimmer",
+];
 
 export const DEFAULT_MODELS = [
   {

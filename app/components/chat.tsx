@@ -10,11 +10,14 @@ import React, {
 } from "react";
 
 import SendWhiteIcon from "../icons/send-white.svg";
+import VoiceWhiteIcon from "../icons/voice-white.svg";
 import BrainIcon from "../icons/brain.svg";
 import RenameIcon from "../icons/rename.svg";
 import ExportIcon from "../icons/share.svg";
 import ReturnIcon from "../icons/return.svg";
 import CopyIcon from "../icons/copy.svg";
+import SpeakIcon from "../icons/speak.svg";
+import SpeakStopIcon from "../icons/speak-stop.svg";
 import LoadingIcon from "../icons/three-dots.svg";
 import LoadingButtonIcon from "../icons/loading.svg";
 import PromptIcon from "../icons/prompt.svg";
@@ -25,10 +28,14 @@ import ResetIcon from "../icons/reload.svg";
 import BreakIcon from "../icons/break.svg";
 import SettingsIcon from "../icons/chat-settings.svg";
 import DeleteIcon from "../icons/clear.svg";
+import CloseIcon from "../icons/close.svg";
 import PinIcon from "../icons/pin.svg";
 import EditIcon from "../icons/rename.svg";
 import ConfirmIcon from "../icons/confirm.svg";
 import CancelIcon from "../icons/cancel.svg";
+import EnablePluginIcon from "../icons/plugin_enable.svg";
+import DisablePluginIcon from "../icons/plugin_disable.svg";
+import UploadIcon from "../icons/upload.svg";
 import ImageIcon from "../icons/image.svg";
 
 import LightIcon from "../icons/light.svg";
@@ -37,6 +44,7 @@ import AutoIcon from "../icons/auto.svg";
 import BottomIcon from "../icons/bottom.svg";
 import StopIcon from "../icons/pause.svg";
 import RobotIcon from "../icons/robot.svg";
+import CheckmarkIcon from "../icons/checkmark.svg";
 
 import {
   ChatMessage,
@@ -66,7 +74,7 @@ import dynamic from "next/dynamic";
 
 import { ChatControllerPool } from "../client/controller";
 import { Prompt, usePromptStore } from "../store/prompt";
-import Locale from "../locales";
+import Locale, { getLang, getSTTLang } from "../locales";
 
 import { IconButton } from "./button";
 import styles from "./chat.module.scss";
@@ -84,6 +92,7 @@ import { useNavigate } from "react-router-dom";
 import {
   CHAT_PAGE_SIZE,
   LAST_INPUT_KEY,
+  ModelProvider,
   Path,
   REQUEST_TIMEOUT_MS,
   UNFINISHED_INPUT,
@@ -96,7 +105,11 @@ import { prettyObject } from "../utils/format";
 import { ExportMessageModal } from "./exporter";
 import { getClientConfig } from "../config/client";
 import { useAllModels } from "../utils/hooks";
+import { ClientApi } from "../client/api";
+import { createTTSPlayer } from "../utils/audio";
 import { MultimodalContent } from "../client/api";
+
+const ttsPlayer = createTTSPlayer();
 
 const Markdown = dynamic(async () => (await import("./markdown")).Markdown, {
   loading: () => <LoadingIcon />,
@@ -219,8 +232,6 @@ function useSubmitHandler() {
   }, []);
 
   const shouldSubmit = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Fix Chinese input method "Enter" on Safari
-    if (e.keyCode == 229) return false;
     if (e.key !== "Enter") return false;
     if (e.key === "Enter" && (e.nativeEvent.isComposing || isComposing.current))
       return false;
@@ -338,8 +349,11 @@ function ClearContextDivider() {
 
 function ChatAction(props: {
   text: string;
-  icon: JSX.Element;
+  icon?: JSX.Element;
+  loding?: boolean;
+  innerNode?: JSX.Element;
   onClick: () => void;
+  style?: React.CSSProperties;
 }) {
   const iconRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
@@ -363,24 +377,40 @@ function ChatAction(props: {
     <div
       className={`${styles["chat-input-action"]} clickable`}
       onClick={() => {
+        if (props.loding) return;
         props.onClick();
-        setTimeout(updateWidth, 1);
+        iconRef ? setTimeout(updateWidth, 1) : undefined;
       }}
-      onMouseEnter={updateWidth}
-      onTouchStart={updateWidth}
+      onMouseEnter={props.icon ? updateWidth : undefined}
+      onTouchStart={props.icon ? updateWidth : undefined}
       style={
-        {
-          "--icon-width": `${width.icon}px`,
-          "--full-width": `${width.full}px`,
-        } as React.CSSProperties
+        props.icon && !props.loding
+          ? ({
+              "--icon-width": `${width.icon}px`,
+              "--full-width": `${width.full}px`,
+              ...props.style,
+            } as React.CSSProperties)
+          : props.loding
+          ? ({
+              "--icon-width": `30px`,
+              "--full-width": `30px`,
+              ...props.style,
+            } as React.CSSProperties)
+          : props.style
       }
     >
-      <div ref={iconRef} className={styles["icon"]}>
-        {props.icon}
+      {props.icon ? (
+        <div ref={iconRef} className={styles["icon"]}>
+          {props.loding ? <LoadingIcon /> : props.icon}
+        </div>
+      ) : null}
+      <div
+        className={props.icon && !props.loding ? styles["text"] : undefined}
+        ref={textRef}
+      >
+        {!props.loding && props.text}
       </div>
-      <div className={styles["text"]} ref={textRef}>
-        {props.text}
-      </div>
+      {props.innerNode}
     </div>
   );
 }
@@ -431,6 +461,14 @@ export function ChatActions(props: {
   const navigate = useNavigate();
   const chatStore = useChatStore();
 
+  // switch Plugins
+  const usePlugins = chatStore.currentSession().mask.usePlugins;
+  function switchUsePlugins() {
+    chatStore.updateCurrentSession((session) => {
+      session.mask.usePlugins = !session.mask.usePlugins;
+    });
+  }
+
   // switch themes
   const theme = config.theme;
   function nextTheme() {
@@ -477,104 +515,112 @@ export function ChatActions(props: {
 
   return (
     <div className={styles["chat-input-actions"]}>
-      {couldStop && (
+      <div>
+        {couldStop && (
+          <ChatAction
+            onClick={stopAll}
+            text={Locale.Chat.InputActions.Stop}
+            icon={<StopIcon />}
+          />
+        )}
+        {!props.hitBottom && (
+          <ChatAction
+            onClick={props.scrollToBottom}
+            text={Locale.Chat.InputActions.ToBottom}
+            icon={<BottomIcon />}
+          />
+        )}
+        {props.hitBottom && (
+          <ChatAction
+            onClick={props.showPromptModal}
+            text={Locale.Chat.InputActions.Settings}
+            icon={<SettingsIcon />}
+          />
+        )}
+
+        {showUploadImage && (
+          <ChatAction
+            onClick={props.uploadImage}
+            text={Locale.Chat.InputActions.UploadImage}
+            icon={props.uploading ? <LoadingButtonIcon /> : <ImageIcon />}
+          />
+        )}
         <ChatAction
-          onClick={stopAll}
-          text={Locale.Chat.InputActions.Stop}
-          icon={<StopIcon />}
+          onClick={nextTheme}
+          text={Locale.Chat.InputActions.Theme[theme]}
+          icon={
+            <>
+              {theme === Theme.Auto ? (
+                <AutoIcon />
+              ) : theme === Theme.Light ? (
+                <LightIcon />
+              ) : theme === Theme.Dark ? (
+                <DarkIcon />
+              ) : null}
+            </>
+          }
         />
-      )}
-      {!props.hitBottom && (
         <ChatAction
-          onClick={props.scrollToBottom}
-          text={Locale.Chat.InputActions.ToBottom}
-          icon={<BottomIcon />}
+          onClick={props.showPromptHints}
+          text={Locale.Chat.InputActions.Prompt}
+          icon={<PromptIcon />}
         />
-      )}
-      {props.hitBottom && (
+
         <ChatAction
-          onClick={props.showPromptModal}
-          text={Locale.Chat.InputActions.Settings}
-          icon={<SettingsIcon />}
+          onClick={() => setShowModelSelector(true)}
+          text={currentModel}
+          icon={<RobotIcon />}
         />
-      )}
 
-      {showUploadImage && (
+        {config.pluginConfig.enable &&
+          /^gpt(?!.*03\d{2}$).*$/.test(currentModel) &&
+          currentModel != "gpt-4-vision-preview" && (
+            <ChatAction
+              onClick={switchUsePlugins}
+              text={
+                usePlugins
+                  ? Locale.Chat.InputActions.DisablePlugins
+                  : Locale.Chat.InputActions.EnablePlugins
+              }
+              icon={usePlugins ? <EnablePluginIcon /> : <DisablePluginIcon />}
+            />
+          )}
+
+        {showModelSelector && (
+          <Selector
+            defaultSelectedValue={currentModel}
+            items={models.map((m) => ({
+              title: m.displayName,
+              value: m.name,
+            }))}
+            onClose={() => setShowModelSelector(false)}
+            onSelection={(s) => {
+              if (s.length === 0) return;
+              chatStore.updateCurrentSession((session) => {
+                session.mask.modelConfig.model = s[0] as ModelType;
+                session.mask.syncGlobalConfig = false;
+              });
+              showToast(s[0]);
+            }}
+          />
+        )}
+      </div>
+      <div>
         <ChatAction
-          onClick={props.uploadImage}
-          text={Locale.Chat.InputActions.UploadImage}
-          icon={props.uploading ? <LoadingButtonIcon /> : <ImageIcon />}
-        />
-      )}
-      <ChatAction
-        onClick={nextTheme}
-        text={Locale.Chat.InputActions.Theme[theme]}
-        icon={
-          <>
-            {theme === Theme.Auto ? (
-              <AutoIcon />
-            ) : theme === Theme.Light ? (
-              <LightIcon />
-            ) : theme === Theme.Dark ? (
-              <DarkIcon />
-            ) : null}
-          </>
-        }
-      />
-
-      <ChatAction
-        onClick={props.showPromptHints}
-        text={Locale.Chat.InputActions.Prompt}
-        icon={<PromptIcon />}
-      />
-      {/* 隐藏聊天框上的所有功能角色按钮 */}
-      {/* <ChatAction
-        onClick={() => {
-          navigate(Path.Masks);
-        }}
-        text={Locale.Chat.InputActions.Masks}
-        icon={<MaskIcon />}
-      /> */}
-
-      <ChatAction
-        text={Locale.Chat.InputActions.Clear}
-        icon={<BreakIcon />}
-        onClick={() => {
-          chatStore.updateCurrentSession((session) => {
-            if (session.clearContextIndex === session.messages.length) {
-              session.clearContextIndex = undefined;
-            } else {
-              session.clearContextIndex = session.messages.length;
-              session.memoryPrompt = ""; // will clear memory
-            }
-          });
-        }}
-      />
-
-      <ChatAction
-        onClick={() => setShowModelSelector(true)}
-        text={currentModel}
-        icon={<RobotIcon />}
-      />
-
-      {showModelSelector && (
-        <Selector
-          defaultSelectedValue={currentModel}
-          items={models.map((m) => ({
-            title: m.displayName,
-            value: m.name,
-          }))}
-          onClose={() => setShowModelSelector(false)}
-          onSelection={(s) => {
-            if (s.length === 0) return;
+          text={Locale.Chat.InputActions.Clear}
+          icon={<BreakIcon />}
+          onClick={() => {
             chatStore.updateCurrentSession((session) => {
-              session.mask.modelConfig.model = s[0] as ModelType;
-              session.mask.syncGlobalConfig = false;
+              if (session.clearContextIndex === session.messages.length) {
+                session.clearContextIndex = undefined;
+              } else {
+                session.clearContextIndex = session.messages.length;
+                session.memoryPrompt = ""; // will clear memory
+              }
             });
-            showToast(s[0]);
           }}
         />
-      )}
+      </div>
     </div>
   );
 }
@@ -746,6 +792,27 @@ function _Chat() {
     }
   };
 
+  const [isListening, setIsListening] = useState(false);
+  const [recognition, setRecognition] = useState<any>(null);
+  const startListening = () => {
+    if (recognition) {
+      recognition.start();
+      setIsListening(true);
+    }
+  };
+
+  const stopListening = () => {
+    if (recognition) {
+      recognition.stop();
+      setIsListening(false);
+    }
+  };
+
+  const onRecognitionEnd = (finalTranscript: string) => {
+    console.log(finalTranscript);
+    if (finalTranscript) setUserInput(finalTranscript);
+  };
+
   const doSubmit = (userInput: string) => {
     if (userInput.trim() === "") return;
     const matchCommand = chatCommands.match(userInput);
@@ -816,6 +883,26 @@ function _Chat() {
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (typeof window !== "undefined") {
+      const SpeechRecognition =
+        (window as any).SpeechRecognition ||
+        (window as any).webkitSpeechRecognition;
+      const recognitionInstance = new SpeechRecognition();
+      recognitionInstance.continuous = true;
+      recognitionInstance.interimResults = true;
+      let lang = getSTTLang();
+      recognitionInstance.lang = lang;
+      recognitionInstance.onresult = (event: any) => {
+        const result = event.results[event.results.length - 1];
+        if (result.isFinal) {
+          if (!isListening) {
+            onRecognitionEnd(result[0].transcript);
+          }
+        }
+      };
+
+      setRecognition(recognitionInstance);
+    }
   }, []);
 
   // check if should send message
@@ -926,13 +1013,40 @@ function _Chat() {
     });
   };
 
+  const [speechStatus, setSpeechStatus] = useState(false);
+  const [speechLoading, setSpeechLoading] = useState(false);
+  async function openaiSpeech(text: string) {
+    if (speechStatus) {
+      ttsPlayer.stop();
+      setSpeechStatus(false);
+    } else {
+      var api: ClientApi;
+      api = new ClientApi(ModelProvider.GPT);
+      const config = useAppConfig.getState();
+      setSpeechLoading(true);
+      ttsPlayer.init();
+      const audioBuffer = await api.llm.speech({
+        model: config.ttsConfig.model,
+        input: text,
+        voice: config.ttsConfig.voice,
+        speed: config.ttsConfig.speed,
+      });
+      setSpeechStatus(true);
+      ttsPlayer
+        .play(audioBuffer, () => {
+          setSpeechStatus(false);
+        })
+        .catch((e) => {
+          console.error("[OpenAI Speech]", e);
+          showToast(prettyObject(e));
+          setSpeechStatus(false);
+        })
+        .finally(() => setSpeechLoading(false));
+    }
+  }
+
   const context: RenderMessage[] = useMemo(() => {
-    // return session.mask.hideContext ? [] : session.mask.context.slice();
-    return session.mask.hideContext
-      ? []
-      : session.mask.context.filter((m) => {
-          return m.role === "assistant" || m.role === "user";
-        });
+    return session.mask.hideContext ? [] : session.mask.context.slice();
   }, [session.mask.context, session.mask.hideContext]);
   const accessStore = useAccessStore();
 
@@ -1107,11 +1221,13 @@ function _Chat() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  
+
   const handlePaste = useCallback(
     async (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
       const currentModel = chatStore.currentSession().mask.modelConfig.model;
-      if(!isVisionModel(currentModel)){return;}
+      if (!isVisionModel(currentModel)) {
+        return;
+      }
       const items = (event.clipboardData || window.clipboardData).items;
       for (const item of items) {
         if (item.kind === "file" && item.type.startsWith("image/")) {
@@ -1244,7 +1360,7 @@ function _Chat() {
           {showMaxIcon && (
             <div className="window-action-button">
               <IconButton
-                icon={config.tightBorder ? <MaxIcon /> : <MinIcon />}
+                icon={config.tightBorder ? <MinIcon /> : <MaxIcon />}
                 bordered
                 onClick={() => {
                   config.update(
@@ -1383,12 +1499,53 @@ function _Chat() {
                                   )
                                 }
                               />
+                              {config.ttsConfig.enable && (
+                                <ChatAction
+                                  text={
+                                    speechStatus
+                                      ? Locale.Chat.Actions.StopSpeech
+                                      : Locale.Chat.Actions.Speech
+                                  }
+                                  loding={speechLoading}
+                                  icon={
+                                    speechStatus ? (
+                                      <SpeakStopIcon />
+                                    ) : (
+                                      <SpeakIcon />
+                                    )
+                                  }
+                                  onClick={() =>
+                                    openaiSpeech(getMessageTextContent(message))
+                                  }
+                                />
+                              )}
                             </>
                           )}
                         </div>
                       </div>
                     )}
                   </div>
+                  {!isUser &&
+                    message.toolMessages &&
+                    message.toolMessages.map((tool, index) => (
+                      <div
+                        className={styles["chat-message-tools-status"]}
+                        key={index}
+                      >
+                        <div className={styles["chat-message-tools-name"]}>
+                          <CheckmarkIcon
+                            className={styles["chat-message-checkmark"]}
+                          />
+                          {tool.toolName}:
+                          <code
+                            className={styles["chat-message-tools-details"]}
+                          >
+                            {tool.toolInput}
+                          </code>
+                        </div>
+                      </div>
+                    ))}
+
                   {showTyping && (
                     <div className={styles["chat-message-status"]}>
                       {Locale.Chat.Typing}
@@ -1442,7 +1599,6 @@ function _Chat() {
                       </div>
                     )}
                   </div>
-
                   <div className={styles["chat-message-action-date"]}>
                     {isContext
                       ? Locale.Chat.IsContext
@@ -1527,13 +1683,26 @@ function _Chat() {
               })}
             </div>
           )}
-          <IconButton
-            icon={<SendWhiteIcon />}
-            text={Locale.Chat.Send}
-            className={styles["chat-input-send"]}
-            type="primary"
-            onClick={() => doSubmit(userInput)}
-          />
+
+          {config.sttConfig.enable ? (
+            <IconButton
+              icon={<VoiceWhiteIcon />}
+              text={
+                isListening ? Locale.Chat.StopSpeak : Locale.Chat.StartSpeak
+              }
+              className={styles["chat-input-send"]}
+              type="primary"
+              onClick={() => (isListening ? stopListening() : startListening())}
+            />
+          ) : (
+            <IconButton
+              icon={<SendWhiteIcon />}
+              text={Locale.Chat.Send}
+              className={styles["chat-input-send"]}
+              type="primary"
+              onClick={() => doSubmit(userInput)}
+            />
+          )}
         </label>
       </div>
 

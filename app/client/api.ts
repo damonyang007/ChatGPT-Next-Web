@@ -7,11 +7,13 @@ import {
 } from "../constant";
 import { ChatMessage, ModelType, useAccessStore, useChatStore } from "../store";
 import { ChatGPTApi } from "./platforms/openai";
+import { FileApi } from "./platforms/utils";
 import { GeminiProApi } from "./platforms/google";
 export const ROLES = ["system", "user", "assistant"] as const;
 export type MessageRole = (typeof ROLES)[number];
 
 export const Models = ["gpt-3.5-turbo-16k", "gpt-4"] as const;
+export const TTSModels = ["tts-1", "tts-1-hd"] as const;
 export type ChatModel = ModelType;
 
 export interface MultimodalContent {
@@ -36,10 +38,36 @@ export interface LLMConfig {
   frequency_penalty?: number;
 }
 
+export interface LLMAgentConfig {
+  maxIterations: number;
+  returnIntermediateSteps: boolean;
+  useTools?: (string | undefined)[];
+}
+
+export interface SpeechOptions {
+  model: string;
+  input: string;
+  voice: string;
+  response_format?: string;
+  speed?: number;
+  onController?: (controller: AbortController) => void;
+}
+
 export interface ChatOptions {
   messages: RequestMessage[];
   config: LLMConfig;
+  onToolUpdate?: (toolName: string, toolInput: string) => void;
+  onUpdate?: (message: string, chunk: string) => void;
+  onFinish: (message: string) => void;
+  onError?: (err: Error) => void;
+  onController?: (controller: AbortController) => void;
+}
 
+export interface AgentChatOptions {
+  messages: RequestMessage[];
+  config: LLMConfig;
+  agentConfig: LLMAgentConfig;
+  onToolUpdate?: (toolName: string, toolInput: string) => void;
   onUpdate?: (message: string, chunk: string) => void;
   onFinish: (message: string) => void;
   onError?: (err: Error) => void;
@@ -65,6 +93,8 @@ export interface LLMModelProvider {
 
 export abstract class LLMApi {
   abstract chat(options: ChatOptions): Promise<void>;
+  abstract speech(options: SpeechOptions): Promise<ArrayBuffer>;
+  abstract toolAgentChat(options: AgentChatOptions): Promise<void>;
   abstract usage(): Promise<LLMUsage>;
   abstract models(): Promise<LLMModel[]>;
 }
@@ -90,15 +120,23 @@ interface ChatProvider {
   usage: () => void;
 }
 
+export abstract class ToolApi {
+  abstract call(input: string): Promise<string>;
+  abstract name: string;
+  abstract description: string;
+}
+
 export class ClientApi {
   public llm: LLMApi;
+  public file: FileApi;
 
   constructor(provider: ModelProvider = ModelProvider.GPT) {
     if (provider === ModelProvider.GeminiPro) {
       this.llm = new GeminiProApi();
-      return;
+    } else {
+      this.llm = new ChatGPTApi();
     }
-    this.llm = new ChatGPTApi();
+    this.file = new FileApi();
   }
 
   config() {}
@@ -147,45 +185,42 @@ export class ClientApi {
   }
 }
 
-export function getHeaders() {
+export function getHeaders(ignoreHeaders?: boolean) {
   const accessStore = useAccessStore.getState();
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    Accept: "application/json",
-  };
-  const currentSession = useChatStore.getState().currentSession();
-  const modelConfig = currentSession.mask.modelConfig;
+  let headers: Record<string, string> = {};
+  const modelConfig = useChatStore.getState().currentSession().mask.modelConfig;
   const isGoogle = modelConfig.model.startsWith("gemini");
+  if (!ignoreHeaders && !isGoogle) {
+    headers = {
+      "Content-Type": "application/json",
+      "x-requested-with": "XMLHttpRequest",
+      Accept: "application/json",
+    };
+  }
   const isAzure = accessStore.provider === ServiceProvider.Azure;
-  const authHeader = isAzure ? "api-key" : "Authorization";
-  let apiKey = isGoogle
+  let authHeader = "Authorization";
+  const apiKey = isGoogle
     ? accessStore.googleApiKey
     : isAzure
     ? accessStore.azureApiKey
     : accessStore.openaiApiKey;
-  const clientConfig = getClientConfig();
-  const makeBearer = (s: string) => `${isAzure ? "" : "Bearer "}${s.trim()}`;
+
+  const makeBearer = (s: string) =>
+    `${isGoogle || isAzure ? "" : "Bearer "}${s.trim()}`;
   const validString = (x: string) => x && x.length > 0;
 
-  // Check if the current session and mask exist and has a custom key
-  if (currentSession && currentSession.mask && currentSession.mask.key) {
-    // Use the custom key from the mask
-    apiKey = currentSession.mask.key;
-  }
-
-  // when using google api in app, not set auth header
-  if (!(isGoogle && clientConfig?.isApp)) {
-    // use user's api key first
-    if (validString(apiKey)) {
-      headers[authHeader] = makeBearer(apiKey);
-    } else if (
-      accessStore.enabledAccessControl() &&
-      validString(accessStore.accessCode)
-    ) {
-      headers[authHeader] = makeBearer(
-        ACCESS_CODE_PREFIX + accessStore.accessCode,
-      );
-    }
+  // use user's api key first
+  if (validString(apiKey)) {
+    authHeader = isGoogle ? "x-goog-api-key" : authHeader;
+    headers[authHeader] = makeBearer(apiKey);
+    if (isAzure) headers["api-key"] = makeBearer(apiKey);
+  } else if (
+    accessStore.enabledAccessControl() &&
+    validString(accessStore.accessCode)
+  ) {
+    headers[authHeader] = makeBearer(
+      ACCESS_CODE_PREFIX + accessStore.accessCode,
+    );
   }
 
   return headers;
