@@ -7,8 +7,6 @@ import { IconButton } from "./button";
 import Huamei_Light from "../icons/Huamei_Light.png";
 import Huamei_Dark from "../icons/Huamei_Dark.png";
 import SettingsIcon from "../icons/settings.svg";
-import GithubIcon from "../icons/github.svg";
-import ChatGptIcon from "../icons/chatgpt.svg";
 import AddIcon from "../icons/add.svg";
 import CloseIcon from "../icons/close.svg";
 import DeleteIcon from "../icons/delete.svg";
@@ -166,7 +164,7 @@ export function SideBar(props: { className?: string }) {
   };
 
   // theme
-  const { theme, setTheme } = config;
+  const { theme } = config;
   const [logoSrc, setLogoSrc] = useState(Huamei_Light);
   useEffect(() => {
     const browserTheme = window.matchMedia("(prefers-color-scheme: dark)")
@@ -181,10 +179,6 @@ export function SideBar(props: { className?: string }) {
       setLogoSrc(Huamei_Dark);
     }
   }, [theme]);
-
-  const handleThemeChange = (newTheme: string) => {
-    setTheme(config.theme);
-  };
 
   useHotKey();
 
@@ -288,11 +282,6 @@ export function SideBar(props: { className?: string }) {
             <Link to={Path.Settings}>
               <IconButton icon={<SettingsIcon />} shadow />
             </Link>
-          </div>
-          <div className={styles["sidebar-action"]}>
-            <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
-              <IconButton icon={<GithubIcon />} shadow />
-            </a>
           </div>
         </div>
         <div>

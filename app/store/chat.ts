@@ -19,17 +19,18 @@ import { ChatControllerPool } from "../client/controller";
 import { prettyObject } from "../utils/format";
 import { estimateTokenLength } from "../utils/token";
 import { nanoid } from "nanoid";
-import { createPersistStore } from "../utils/store";
+import { Plugin, usePluginStore } from "../store/plugin";
 
 export interface ChatToolMessage {
   toolName: string;
   toolInput?: string;
 }
+import { createPersistStore } from "../utils/store";
 
 export type ChatMessage = RequestMessage & {
   date: string;
-  streaming?: boolean;
   toolMessages?: ChatToolMessage[];
+  streaming?: boolean;
   isError?: boolean;
   id: string;
   model?: ModelType;
@@ -39,6 +40,7 @@ export function createMessage(override: Partial<ChatMessage>): ChatMessage {
   return {
     id: nanoid(),
     date: new Date().toLocaleString(),
+    toolMessages: new Array<ChatToolMessage>(),
     role: "user",
     content: "",
     ...override,
@@ -90,6 +92,12 @@ function createEmptySession(): ChatSession {
 }
 
 function getSummarizeModel(currentModel: string) {
+  // if the current model does not exist in the default model
+  // example azure services cannot use SUMMARIZE_MODEL
+  const model = DEFAULT_MODELS.find((m) => m.name === currentModel);
+  console.log("model", model);
+  if (!model) return currentModel;
+  if (model.provider.providerType === "google") return GEMINI_SUMMARIZE_MODEL;
   // if it is using gpt-* models, force to use 3.5 to summarize
   if (currentModel.startsWith("gpt")) {
     return SUMMARIZE_MODEL;
@@ -306,12 +314,7 @@ export const useChatStore = createPersistStore(
         let mContent: string | MultimodalContent[] = userContent;
 
         if (attachImages && attachImages.length > 0) {
-          mContent = [
-            {
-              type: "text",
-              text: userContent,
-            },
-          ];
+          mContent = [];
           mContent = mContent.concat(
             attachImages.map((url) => {
               return {
@@ -322,16 +325,22 @@ export const useChatStore = createPersistStore(
               };
             }),
           );
+          mContent = mContent.concat([
+            {
+              type: "text",
+              text: userContent,
+            },
+          ]);
         }
         let userMessage: ChatMessage = createMessage({
           role: "user",
           content: mContent,
         });
-
         const botMessage: ChatMessage = createMessage({
           role: "assistant",
           streaming: true,
           model: modelConfig.model,
+          toolMessages: [],
         });
 
         // get recent messages
@@ -339,76 +348,157 @@ export const useChatStore = createPersistStore(
         const sendMessages = recentMessages.concat(userMessage);
         const messageIndex = get().currentSession().messages.length + 1;
 
+        const config = useAppConfig.getState();
+        const pluginConfig = useAppConfig.getState().pluginConfig;
+        const pluginStore = usePluginStore.getState();
+        const allPlugins = pluginStore
+          .getAll()
+          .filter(
+            (m) =>
+              (!getLang() ||
+                m.lang === (getLang() == "cn" ? getLang() : "en")) &&
+              m.enable,
+          );
+
         // save user's and bot's message
         get().updateCurrentSession((session) => {
           const savedUserMessage = {
             ...userMessage,
             content: mContent,
           };
-          session.messages = session.messages.concat([
-            savedUserMessage,
-            botMessage,
-          ]);
+          session.messages.push(savedUserMessage);
+          session.messages.push(botMessage);
         });
-
         var api: ClientApi;
-        if (modelConfig.model.startsWith("gemini")) {
-          api = new ClientApi(ModelProvider.GeminiPro);
-        } else {
-          api = new ClientApi(ModelProvider.GPT);
-        }
-
-        // make request
-        api.llm.chat({
-          messages: sendMessages,
-          config: { ...modelConfig, stream: true },
-          onUpdate(message) {
-            botMessage.streaming = true;
-            if (message) {
-              botMessage.content = message;
-            }
-            get().updateCurrentSession((session) => {
-              session.messages = session.messages.concat();
-            });
-          },
-          onFinish(message) {
-            botMessage.streaming = false;
-            if (message) {
-              botMessage.content = message;
-              get().onNewMessage(botMessage);
-            }
-            ChatControllerPool.remove(session.id, botMessage.id);
-          },
-          onError(error) {
-            const isAborted = error.message.includes("aborted");
-            botMessage.content +=
-              "\n\n" +
-              prettyObject({
-                error: true,
-                message: error.message,
+        api = new ClientApi(ModelProvider.GPT);
+        if (
+          config.pluginConfig.enable &&
+          session.mask.usePlugins &&
+          allPlugins.length > 0 &&
+          modelConfig.model.startsWith("gpt") &&
+          modelConfig.model != "gpt-4-vision-preview"
+        ) {
+          console.log("[ToolAgent] start");
+          const pluginToolNames = allPlugins.map((m) => m.toolName);
+          api.llm.toolAgentChat({
+            messages: sendMessages,
+            config: { ...modelConfig, stream: true },
+            agentConfig: { ...pluginConfig, useTools: pluginToolNames },
+            onUpdate(message) {
+              botMessage.streaming = true;
+              if (message) {
+                botMessage.content = message;
+              }
+              get().updateCurrentSession((session) => {
+                session.messages = session.messages.concat();
               });
-            botMessage.streaming = false;
-            userMessage.isError = !isAborted;
-            botMessage.isError = !isAborted;
-            get().updateCurrentSession((session) => {
-              session.messages = session.messages.concat();
-            });
-            ChatControllerPool.remove(
-              session.id,
-              botMessage.id ?? messageIndex,
-            );
+            },
+            onToolUpdate(toolName, toolInput) {
+              botMessage.streaming = true;
+              if (toolName && toolInput) {
+                botMessage.toolMessages!.push({
+                  toolName,
+                  toolInput,
+                });
+              }
+              get().updateCurrentSession((session) => {
+                session.messages = session.messages.concat();
+              });
+            },
+            onFinish(message) {
+              botMessage.streaming = false;
+              if (message) {
+                botMessage.content = message;
+                get().onNewMessage(botMessage);
+              }
+              ChatControllerPool.remove(session.id, botMessage.id);
+            },
+            onError(error) {
+              const isAborted = error.message.includes("aborted");
+              botMessage.content +=
+                "\n\n" +
+                prettyObject({
+                  error: true,
+                  message: error.message,
+                });
+              botMessage.streaming = false;
+              userMessage.isError = !isAborted;
+              botMessage.isError = !isAborted;
+              get().updateCurrentSession((session) => {
+                session.messages = session.messages.concat();
+              });
+              ChatControllerPool.remove(
+                session.id,
+                botMessage.id ?? messageIndex,
+              );
 
-            console.error("[Chat] failed ", error);
-          },
-          onController(controller) {
-            // collect controller for stop/retry
-            ChatControllerPool.addController(
-              session.id,
-              botMessage.id ?? messageIndex,
-              controller,
-            );
-          },
-        });
+              console.error("[Chat] failed ", error);
+            },
+            onController(controller) {
+              // collect controller for stop/retry
+              ChatControllerPool.addController(
+                session.id,
+                botMessage.id ?? messageIndex,
+                controller,
+              );
+            },
+          });
+        } else {
+          if (modelConfig.model.startsWith("gemini")) {
+            api = new ClientApi(ModelProvider.GeminiPro);
+          }
+          // make request
+          api.llm.chat({
+            messages: sendMessages,
+            config: { ...modelConfig, stream: true },
+            onUpdate(message) {
+              botMessage.streaming = true;
+              if (message) {
+                botMessage.content = message;
+              }
+              get().updateCurrentSession((session) => {
+                session.messages = session.messages.concat();
+              });
+            },
+            onFinish(message) {
+              botMessage.streaming = false;
+              if (message) {
+                botMessage.content = message;
+                get().onNewMessage(botMessage);
+              }
+              ChatControllerPool.remove(session.id, botMessage.id);
+            },
+            onError(error) {
+              const isAborted = error.message.includes("aborted");
+              botMessage.content +=
+                "\n\n" +
+                prettyObject({
+                  error: true,
+                  message: error.message,
+                });
+              botMessage.streaming = false;
+              userMessage.isError = !isAborted;
+              botMessage.isError = !isAborted;
+              get().updateCurrentSession((session) => {
+                session.messages = session.messages.concat();
+              });
+              ChatControllerPool.remove(
+                session.id,
+                botMessage.id ?? messageIndex,
+              );
+
+              console.error("[Chat] failed ", error);
+            },
+            onController(controller) {
+              // collect controller for stop/retry
+              ChatControllerPool.addController(
+                session.id,
+                botMessage.id ?? messageIndex,
+                controller,
+              );
+            },
+          });
+        }
       },
 
       getMemoryPrompt() {
@@ -549,6 +639,7 @@ export const useChatStore = createPersistStore(
         // should summarize topic after chating more than 50 words
         const SUMMARIZE_MIN_LEN = 50;
         if (
+          !process.env.NEXT_PUBLIC_DISABLE_AUTOGENERATETITLE &&
           config.enableAutoGenerateTitle &&
           session.topic === DEFAULT_TOPIC &&
           countMessages(messages) >= SUMMARIZE_MIN_LEN
@@ -603,6 +694,7 @@ export const useChatStore = createPersistStore(
         );
 
         if (
+          !process.env.NEXT_PUBLIC_DISABLE_SENDMEMORY &&
           historyMsgLength > modelConfig.compressMessageLengthThreshold &&
           modelConfig.sendMemory
         ) {
@@ -623,7 +715,7 @@ export const useChatStore = createPersistStore(
               session.memoryPrompt = message;
             },
             onFinish(message) {
-              console.log("[Memory] ", message);
+              // console.log("[Memory] ", message);
               get().updateCurrentSession((session) => {
                 session.lastSummarizeIndex = lastSummarizeIndex;
                 session.memoryPrompt = message; // Update the memory prompt for stored it in local storage

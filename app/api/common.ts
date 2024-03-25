@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSideConfig } from "../config/server";
-import { DEFAULT_MODELS, OPENAI_BASE_URL, GEMINI_BASE_URL } from "../constant";
+import { DEFAULT_MODELS, OPENAI_BASE_URL } from "../constant";
 import { collectModelTable } from "../utils/model";
 import { makeAzurePath } from "../azure";
 
@@ -65,10 +65,26 @@ export async function requestOpenai(req: NextRequest) {
     path = makeAzurePath(path, serverConfig.azureApiVersion);
   }
 
+  let jsonBody;
+  let clonedBody;
+  const contentType = req.headers.get("Content-Type");
+  if (
+    req.method !== "GET" &&
+    req.method !== "HEAD" &&
+    contentType?.includes("json")
+  ) {
+    clonedBody = await req.text();
+    jsonBody = JSON.parse(clonedBody) as { model?: string };
+  } else {
+    clonedBody = req.body;
+  }
+  if (serverConfig.isAzure) {
+    baseUrl = `${baseUrl}/${jsonBody?.model}`;
+  }
   const fetchUrl = `${baseUrl}/${path}`;
   const fetchOptions: RequestInit = {
     headers: {
-      "Content-Type": "application/json",
+      "Content-Type": contentType ?? "application/json",
       "Cache-Control": "no-store",
       [authHeaderName]: authValue,
       ...(serverConfig.openaiOrgId && {
@@ -76,7 +92,7 @@ export async function requestOpenai(req: NextRequest) {
       }),
     },
     method: req.method,
-    body: req.body,
+    body: clonedBody,
     // to fix #2485: https://stackoverflow.com/questions/55920957/cloudflare-worker-typeerror-one-time-use-body
     redirect: "manual",
     // @ts-ignore
@@ -85,16 +101,15 @@ export async function requestOpenai(req: NextRequest) {
   };
 
   // #1815 try to refuse gpt4 request
-  if (serverConfig.customModels && req.body) {
+  if (serverConfig.customModels && clonedBody) {
     try {
       const modelTable = collectModelTable(
         DEFAULT_MODELS,
         serverConfig.customModels,
       );
-      const clonedBody = await req.text();
+      // const clonedBody = await req.text();
+      // const jsonBody = JSON.parse(clonedBody) as { model?: string };
       fetchOptions.body = clonedBody;
-
-      const jsonBody = JSON.parse(clonedBody) as { model?: string };
 
       // not undefined and is false
       if (modelTable[jsonBody?.model ?? ""].available === false) {

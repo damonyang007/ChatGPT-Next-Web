@@ -44,28 +44,28 @@ export const RU_PLUGINS: BuiltinPlugin[] = [
     enable: false,
     onlyNodeRuntime: false,
   },
-  {
-    name: "DALL·E",
-    toolName: "dalle_image_generator",
-    lang: "ru",
-    description:
-      "DALL-E 2 - это система искусственного интеллекта, которая может создавать реалистичные изображения и произведения искусства на основе описания на естественном языке. Для использования этого плагина требуется настройка службы хранения объектов Cloudflare R2.",
-    builtin: true,
-    createdAt: 1694703673000,
-    enable: false,
-    onlyNodeRuntime: false,
-  },
-  {
-    name: "Stable Diffusion",
-    toolName: "stable_diffusion_image_generator",
-    lang: "ru",
-    description:
-      "Модель преобразования текста в изображение Stable Diffusion. Для использования этого плагина требуется настройка сервиса хранения объектов Cloudflare R2 и API stable-diffusion-webui.",
-    builtin: true,
-    createdAt: 1688899480510,
-    enable: false,
-    onlyNodeRuntime: false,
-  },
+  // {
+  //   name: "DALL·E",
+  //   toolName: "dalle_image_generator",
+  //   lang: "ru",
+  //   description:
+  //     "DALL-E 2 - это система искусственного интеллекта, которая может создавать реалистичные изображения и произведения искусства на основе описания на естественном языке. Для использования этого плагина требуется настройка службы хранения объектов Cloudflare R2.",
+  //   builtin: true,
+  //   createdAt: 1694703673000,
+  //   enable: false,
+  //   onlyNodeRuntime: false,
+  // },
+  // {
+  //   name: "Stable Diffusion",
+  //   toolName: "stable_diffusion_image_generator",
+  //   lang: "ru",
+  //   description:
+  //     "Модель преобразования текста в изображение Stable Diffusion. Для использования этого плагина требуется настройка сервиса хранения объектов Cloudflare R2 и API stable-diffusion-webui.",
+  //   builtin: true,
+  //   createdAt: 1688899480510,
+  //   enable: false,
+  //   onlyNodeRuntime: false,
+  // },
   {
     name: "Arxiv",
     toolName: "arxiv",
