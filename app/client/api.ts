@@ -53,6 +53,16 @@ export interface SpeechOptions {
   onController?: (controller: AbortController) => void;
 }
 
+export interface TranscriptionOptions {
+  model?: "whisper-1";
+  file: Blob;
+  language?: string;
+  prompt?: string;
+  response_format?: "json" | "text" | "srt" | "verbose_json" | "vtt";
+  temperature?: number;
+  onController?: (controller: AbortController) => void;
+}
+
 export interface ChatOptions {
   messages: RequestMessage[];
   config: LLMConfig;
