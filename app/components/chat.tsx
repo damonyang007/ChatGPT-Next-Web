@@ -905,6 +905,7 @@ function _Chat() {
           ),
     );
   }, []);
+
   // check if should send message
   const onInputKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     // if ArrowUp and no userInput, fill with last input

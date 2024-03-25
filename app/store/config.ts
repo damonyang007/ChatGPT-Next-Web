@@ -96,12 +96,6 @@ export type PluginConfig = ChatConfig["pluginConfig"];
 export type TTSConfig = ChatConfig["ttsConfig"];
 export type STTConfig = ChatConfig["sttConfig"];
 
-export type ChatConfigStore = ChatConfig & {
-  reset: () => void;
-  update: (updater: (config: ChatConfig) => void) => void;
-  setTheme: (theme: Theme) => void;
-};
-
 export function limitNumber(
   x: number,
   min: number,

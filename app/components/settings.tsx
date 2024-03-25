@@ -69,8 +69,11 @@ import { Avatar, AvatarPicker } from "./emoji";
 import { getClientConfig } from "../config/client";
 import { useSyncStore } from "../store/sync";
 import { nanoid } from "nanoid";
+import { PluginConfigList } from "./plugin-config";
 import { useMaskStore } from "../store/mask";
 import { ProviderType } from "../utils/cloud";
+import { TTSConfigList } from "./tts-config";
+import { STTConfigList } from "./stt-config";
 
 function EditPromptModal(props: { id: string; onClose: () => void }) {
   const promptStore = usePromptStore();
@@ -1183,6 +1186,39 @@ export function Settings() {
         {shouldShowPromptModal && (
           <UserPromptModal onClose={() => setShowPromptModal(false)} />
         )}
+
+        <List>
+          <PluginConfigList
+            pluginConfig={config.pluginConfig}
+            updateConfig={(updater) => {
+              const pluginConfig = { ...config.pluginConfig };
+              updater(pluginConfig);
+              config.update((config) => (config.pluginConfig = pluginConfig));
+            }}
+          />
+        </List>
+
+        <List>
+          <TTSConfigList
+            ttsConfig={config.ttsConfig}
+            updateConfig={(updater) => {
+              const ttsConfig = { ...config.ttsConfig };
+              updater(ttsConfig);
+              config.update((config) => (config.ttsConfig = ttsConfig));
+            }}
+          />
+        </List>
+
+        <List>
+          <STTConfigList
+            sttConfig={config.sttConfig}
+            updateConfig={(updater) => {
+              const sttConfig = { ...config.sttConfig };
+              updater(sttConfig);
+              config.update((config) => (config.sttConfig = sttConfig));
+            }}
+          />
+        </List>
 
         <DangerItems />
       </div>
