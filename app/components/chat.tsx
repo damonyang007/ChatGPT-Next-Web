@@ -37,6 +37,7 @@ import EnablePluginIcon from "../icons/plugin_enable.svg";
 import DisablePluginIcon from "../icons/plugin_disable.svg";
 import UploadIcon from "../icons/upload.svg";
 import ImageIcon from "../icons/image.svg";
+import FileIcon from "../icons/upload_file.svg";
 
 import LightIcon from "../icons/light.svg";
 import DarkIcon from "../icons/dark.svg";
@@ -455,6 +456,7 @@ function useScrollToBottom(
 
 export function ChatActions(props: {
   uploadImage: () => void;
+  uploadFile: () => void;
   setAttachImages: (images: string[]) => void;
   setUploading: (uploading: boolean) => void;
   showPromptModal: () => void;
@@ -498,6 +500,7 @@ export function ChatActions(props: {
   );
   const [showModelSelector, setShowModelSelector] = useState(false);
   const [showUploadImage, setShowUploadImage] = useState(false);
+  const [showUploadFile, setShowUploadFile] = useState(false);
 
   useEffect(() => {
     const show = isVisionModel(currentModel);
@@ -551,6 +554,15 @@ export function ChatActions(props: {
             icon={props.uploading ? <LoadingButtonIcon /> : <ImageIcon />}
           />
         )}
+
+        {!showUploadFile && (
+          <ChatAction
+            onClick={props.uploadFile}
+            text={Locale.Chat.InputActions.UploadFile}
+            icon={props.uploading ? <LoadingButtonIcon /> : <FileIcon />}
+          />
+        )}
+
         <ChatAction
           onClick={nextTheme}
           text={Locale.Chat.InputActions.Theme[theme]}
@@ -1311,6 +1323,8 @@ function _Chat() {
     setAttachImages(images);
   }
 
+  async function uploadFile() {}
+
   return (
     <div className={styles.chat} key={session.id}>
       <div className="window-header" data-tauri-drag-region>
@@ -1618,6 +1632,7 @@ function _Chat() {
 
         <ChatActions
           uploadImage={uploadImage}
+          uploadFile={uploadFile}
           setAttachImages={setAttachImages}
           setUploading={setUploading}
           showPromptModal={() => setShowPromptModal(true)}
