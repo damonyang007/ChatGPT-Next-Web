@@ -53,6 +53,9 @@ typings
 # local env files
 .env*.local
 
+# docker-compose env files
+.env
+
 # Next.js build output
 .next
 out
