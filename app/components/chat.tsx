@@ -69,6 +69,7 @@ import {
   getMessageImages,
   isVisionModel,
   compressImage,
+  isFirefox,
 } from "../utils";
 
 import dynamic from "next/dynamic";
@@ -93,6 +94,7 @@ import { useNavigate } from "react-router-dom";
 import {
   CHAT_PAGE_SIZE,
   DEFAULT_STT_ENGINE,
+  FIREFOX_DEFAULT_STT_ENGINE,
   LAST_INPUT_KEY,
   ModelProvider,
   Path,
@@ -239,6 +241,8 @@ function useSubmitHandler() {
   }, []);
 
   const shouldSubmit = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Fix Chinese input method "Enter" on Safari
+    if (e.keyCode == 229) return false;
     if (e.key !== "Enter") return false;
     if (e.key === "Enter" && (e.nativeEvent.isComposing || isComposing.current))
       return false;
@@ -398,12 +402,12 @@ function ChatAction(props: {
               ...props.style,
             } as React.CSSProperties)
           : props.loding
-          ? ({
-              "--icon-width": `30px`,
-              "--full-width": `30px`,
-              ...props.style,
-            } as React.CSSProperties)
-          : props.style
+            ? ({
+                "--icon-width": `30px`,
+                "--full-width": `30px`,
+                ...props.style,
+              } as React.CSSProperties)
+            : props.style
       }
     >
       {props.icon ? (
@@ -907,6 +911,7 @@ function _Chat() {
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (isFirefox()) config.sttConfig.engine = FIREFOX_DEFAULT_STT_ENGINE;
     setSpeechApi(
       config.sttConfig.engine === DEFAULT_STT_ENGINE
         ? new WebTranscriptionApi((transcription) =>

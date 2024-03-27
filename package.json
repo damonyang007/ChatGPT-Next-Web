@@ -30,8 +30,8 @@
     "axios": "^0.26.0",
     "cheerio": "^1.0.0-rc.12",
     "duck-duck-scrape": "^2.2.4",
-    "encoding": "^0.1.13",
     "emoji-picker-react": "^4.9.2",
+    "encoding": "^0.1.13",
     "fuse.js": "^7.0.0",
     "html-entities": "^2.4.0",
     "html-to-image": "^1.11.11",
@@ -59,7 +59,7 @@
     "zustand": "^4.3.8"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "1.5.11",
+    "@tauri-apps/cli": "1.5.7",
     "@types/html-to-text": "^9.0.1",
     "@types/node": "^20.11.30",
     "@types/react": "^18.2.70",
