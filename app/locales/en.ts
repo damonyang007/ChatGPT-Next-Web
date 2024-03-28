@@ -71,6 +71,7 @@ const en: LocaleType = {
       DisablePlugins: "Disable Plugins",
       UploadImage: "Upload Images",
       UploadFile: "Upload Files",
+      clearFileHistoryMsg: "",
     },
     Rename: "Rename Chat",
     Typing: "Typing…",

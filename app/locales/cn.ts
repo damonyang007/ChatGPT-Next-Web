@@ -69,6 +69,8 @@ const cn = {
       DisablePlugins: "关闭插件",
       UploadImage: "上传图片",
       UploadFile: "上传文件",
+      clearFileHistoryMsg:
+        "⚠️Please delete the historical files in the knowledge base before attempting to upload again!",
     },
     Rename: "重命名对话",
     Typing: "正在输入…",

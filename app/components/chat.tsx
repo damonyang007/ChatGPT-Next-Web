@@ -118,6 +118,10 @@ import {
   WebTranscriptionApi,
 } from "../utils/speech";
 
+import { upload_files } from "../utils/javascript/file-input";
+
+upload_files();
+
 const ttsPlayer = createTTSPlayer();
 
 const Markdown = dynamic(async () => (await import("./markdown")).Markdown, {
@@ -1328,8 +1332,6 @@ function _Chat() {
     setAttachImages(images);
   }
 
-  async function uploadFile() {}
-
   return (
     <div className={styles.chat} key={session.id}>
       <div className="window-header" data-tauri-drag-region>
@@ -1637,7 +1639,7 @@ function _Chat() {
 
         <ChatActions
           uploadImage={uploadImage}
-          uploadFile={uploadFile}
+          uploadFile={upload_files}
           setAttachImages={setAttachImages}
           setUploading={setUploading}
           showPromptModal={() => setShowPromptModal(true)}
