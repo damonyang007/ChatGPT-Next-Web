@@ -199,7 +199,8 @@ export class ClientApi {
 export function getHeaders(ignoreHeaders?: boolean) {
   const accessStore = useAccessStore.getState();
   let headers: Record<string, string> = {};
-  const modelConfig = useChatStore.getState().currentSession().mask.modelConfig;
+  const currentSession = useChatStore.getState().currentSession();
+  const modelConfig = currentSession.mask.modelConfig;
   const isGoogle = modelConfig.model.startsWith("gemini");
   if (!ignoreHeaders && !isGoogle) {
     headers = {
@@ -210,15 +211,21 @@ export function getHeaders(ignoreHeaders?: boolean) {
   }
   const isAzure = accessStore.provider === ServiceProvider.Azure;
   let authHeader = "Authorization";
-  const apiKey = isGoogle
+  let apiKey = isGoogle
     ? accessStore.googleApiKey
     : isAzure
-    ? accessStore.azureApiKey
-    : accessStore.openaiApiKey;
+      ? accessStore.azureApiKey
+      : accessStore.openaiApiKey;
 
   const makeBearer = (s: string) =>
     `${isGoogle || isAzure ? "" : "Bearer "}${s.trim()}`;
   const validString = (x: string) => x && x.length > 0;
+
+  // Check if the current session and mask exist and has a custom key
+  if (currentSession && currentSession.mask && currentSession.mask.key) {
+    // Use the custom key from the mask
+    apiKey = currentSession.mask.key;
+  }
 
   // use user's api key first
   if (validString(apiKey)) {
