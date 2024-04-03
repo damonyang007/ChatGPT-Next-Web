@@ -7,7 +7,7 @@ export const CN_MASKS: BuiltinMask[] = [
     context: [
       {
         id: "writer-0",
-        role: "assistant",
+        role: "system",
         content: "我是一个画图机器人，请对你需要的图片内容进行描述",
         date: "",
       },
@@ -32,7 +32,7 @@ export const CN_MASKS: BuiltinMask[] = [
     context: [
       {
         id: "writer-0",
-        role: "assistant",
+        role: "system",
         content: `您好！我是Findit，我将帮您查询华美海润和瀚盈科技的所有规章制度信息。无论您想了解公司规定还是某个具体流程，只需向我提问即可。
         例如，您可以尝试问我以下问题：
         1.	怎样在公司楼下停车？
@@ -55,8 +55,8 @@ export const CN_MASKS: BuiltinMask[] = [
     lang: "cn",
     builtin: true,
     createdAt: 1688899480511,
-    url: "https://hhkcfindit.azurewebsites.net/api",
-    key: "fastgpt-ogl6WdtPVV1yR0sTB1yZWn74mYJm",
+    url: "https://fastgptorigin.azurewebsites.net/api",
+    key: "fastgpt-YTXZD3OzsYYqtWIicYyGtwFhnn0yX",
   },
   {
     avatar: "1f4e7",

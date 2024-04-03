@@ -258,11 +258,6 @@ function ContextPromptItem(props: {
 }) {
   const [focusingInput, setFocusingInput] = useState(false);
 
-  // 如果 role 为 'system'，则不渲染
-  if (props.prompt.role === "system") {
-    return null;
-  }
-
   return (
     <div className={chatStyle["context-prompt-row"]}>
       {!focusingInput && (
