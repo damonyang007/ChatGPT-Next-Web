@@ -9,6 +9,7 @@ import { ChatMessage, ModelType, useAccessStore, useChatStore } from "../store";
 import { ChatGPTApi } from "./platforms/openai";
 import { FileApi } from "./platforms/utils";
 import { GeminiProApi } from "./platforms/google";
+// import { ClaudeApi } from "./platforms/anthropic";
 export const ROLES = ["system", "user", "assistant"] as const;
 export type MessageRole = (typeof ROLES)[number];
 
@@ -149,7 +150,6 @@ export class ClientApi {
     }
     this.file = new FileApi();
   }
-
   config() {}
 
   prompts() {}
